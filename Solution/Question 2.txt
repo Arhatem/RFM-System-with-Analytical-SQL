@@ -1,0 +1,38 @@
+with 
+Rec
+as (select distinct customer_id,
+max (to_date(invoicedate,'mm/dd/yyyy hh24:mi'))over() as maxdate, 
+last_value( to_date(invoicedate , 'MM/DD/YYYY hh24:mi'))
+            over (partition by customer_id order by to_date(invoicedate , 'MM/DD/YYYY hh24:mi') rows between unbounded preceding and unbounded following ) lastcust
+from tableretail),
+Freq
+as (select distinct customer_id, count(invoice) over (partition by customer_id) as total_buy from tableretail),
+Mone
+as (select distinct customer_id, sum (price *quantity) over (partition by customer_id) as total_paid from tableretail)
+
+
+select customer_id,recency,frequency,monetary,r_score,fm_score,
+    case 
+    when r_score =4 and fm_score=5 or r_score=5 and fm_score=5 or r_score=5 and fm_score=4 then 'Champions'
+    when (r_score =5 and fm_score=2) or (r_score=4 and fm_score=2) or (r_score=3 and fm_score=3) or (r_score=4 and fm_score=3) then 'Potential Loyalists'
+    when (r_score =5 and fm_score=3) or (r_score=4 and fm_score=4) or (r_score=3 and fm_score=5) or (r_score=3 and fm_score=4) then 'Loyal Customers'
+    when (r_score =5 and fm_score=1) then 'Recent customers'
+    when (r_score =4 and fm_score=1) or (r_score=3 and fm_score=1) then 'Promising'
+    when (r_score =3 and fm_score=2) or (r_score=2 and fm_score=3) or (r_score=2 and fm_score=2) then 'Customers Needing Attention'
+    when (r_score =2 and fm_score=5) or (r_score=2 and fm_score=4) or (r_score=1 and fm_score=3) then 'At Risk'
+    when (r_score =1 and fm_score=5) or (r_score=1 and fm_score=4) then 'Can’t Lose Them'
+    when (r_score =1 and fm_score=2) then 'Hibernating'
+    else 'Lost'
+    end cust_segment
+from (
+
+select r.customer_id, 
+round (maxdate - lastcust) as recency,
+total_buy as frequency,
+total_paid as Monetary,
+ntile(5) over (order by round(maxdate - lastcust) desc ) as R_score,
+round(((ntile(5) over (order by total_buy)) + ntile(5) over (order by total_paid)) / 2) as fm_score
+from Rec r, freq f, mone m
+where r.customer_id = f.customer_id
+and f.customer_id = m.customer_id 
+order by f.customer_id);

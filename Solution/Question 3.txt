@@ -1,0 +1,26 @@
+
+A) What is the maximum number of consecutive days a customer made purchases?
+
+select cust_id, max(countt) as max_consecutive_days from (
+select cust_id, count(leadd) as countt from
+(Select cust_id, calendar_dt,
+lead(calendar_dt) over (partition by cust_id order by calendar_dt) as leadd
+from customer_data)
+where leadd - calendar_dt = 1
+group by cust_id)
+group by cust_id;
+
+
+
+
+B) On average, how many days/transactions does it take a customer to reach a spent threshold of 250 L.E?
+
+select avg (num_transactions) from
+(Select cust_id, count (*) as num_transactions
+from (
+  select cust_id, calendar_dt, amt_le, 
+         sum(amt_le) over (partition by cust_id order by calendar_dt) as cumulative_sum
+  from customer_data
+)
+where cumulative_sum >= 250
+group by cust_id);

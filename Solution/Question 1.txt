@@ -1,0 +1,65 @@
+-- How much is each customer paid.
+select distinct customer_id , sum(price *quantity ) over(partition by customer_id) as customer_paid from tableretail;
+
+-- How much is the highest customer paid.
+select max(customer_paid) from
+(select distinct customer_id , sum(price *quantity ) over(partition by customer_id) as customer_paid from tableretail);
+
+-- How much is the lowest customer paid.
+select min(customer_paid) from
+(Select distinct customer_id, sum (price *quantity) over (partition by customer_id) as customer_paid from tableretail);
+
+-- How much is the average of customers paid.
+select avg(customer_paid) from
+(Select distinct customer_id, sum (price *quantity) over (partition by customer_id) as customer_paid from tableretail);
+
+-- How much is all customers paid.
+select sum(customer_paid) from
+(Select distinct customer_id, sum (price *quantity) over (partition by customer_id) as customer_paid from tableretail);
+
+-- How much is each invoice price.
+select distinct invoice, sum (price *quantity) over (partition by invoice) as invoice_price from tableretail;
+
+-- How much is the highest invoice price.
+select max(invoice_price) from 
+(Select distinct invoice, sum (price *quantity) over (partition by invoice) as invoice_price from tableretail);
+
+-- How much is the lowest invoice price.
+select min(invoice_price) from 
+(Select distinct invoice, sum (price *quantity) over (partition by invoice) as invoice_price from tableretail);
+
+-- How much is the average of all invoices price.
+select avg(invoice_price) from 
+(Select distinct invoice, sum (price *quantity) over (partition by invoice) as invoice_price from tableretail);
+
+-- How much is all invoices price.
+select sum(invoice_price) from 
+(Select distinct invoice, sum (price *quantity) over (partition by invoice) as invoice_price from tableretail);
+
+-- How much is the most expensive product per each invoice.
+select distinct invoice, max(price) over (partition by invoice order by price desc) as most_expensive_product from tableretail
+order by invoice;
+
+-- How much is the cheapest product per each invoice.
+select distinct invoice, min(price) over (partition by invoice order by price desc) as most_expensive_product from tableretail order by invoice;
+-- How much is the most expensive product.
+select max(most_expensive_product) from 
+(Select distinct invoice, max(price) over (partition by invoice order by price desc) as most_expensive_product from tableretail
+order by invoice);
+
+-- How much is the cheapest product.
+select min(most_expensive_product) from 
+(Select distinct invoice, min(price) over (partition by invoice order by price desc) as most_expensive_product from tableretail
+order by invoice);
+
+
+
+-- How many is the most quantities per each invoice.
+select distinct invoice, max(quantity) over (partition by invoice) as most_quantities from tableretail
+order by invoice;
+
+--How many is the most quantities had been ordered per all invoices.
+select max(most_quantities) from 
+(Select distinct invoice, sum(quantity) over (partition by invoice) as most_quantities from tableretail
+order by invoice);
+
